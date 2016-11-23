@@ -1,4 +1,16 @@
 {
+  "name": "cordova-file-persistence",
+  "version": "0.0.1",
+  "description": "Download remote files to your local filesystem in a cordova app.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DJWassink/cordova-file-persistence.git"
+  },
+  "author": "\"Dirk-Jan Wassink <dirk.jan.wassink@gmail.com> (http://dirkjanwassink.nl)",
+  "bugs": {
+    "url": "https://github.com/DJWassink/cordova-file-persistence/issues"
+  },
+  "homepage": "https://github.com/DJWassink/cordova-file-persistence#readme",
   "dependencies": {
     "promise-parallel-throttle": "^2.2.0"
   }
