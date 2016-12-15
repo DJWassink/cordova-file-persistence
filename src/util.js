@@ -1,10 +1,7 @@
 export const GenerateUrlRegex = (storageUrl) => {
-    if (storageUrl.includes('https://')) {
-        storageUrl.replace('https://', 'https?://');
-    } else {
-        storageUrl.replace('http://', 'https?://');
-    }
-    return new RegExp(storageUrl + '[^,.^;]*\.[a-z0-9]*', 'ig');
+    const currentSchema = storageUrl.includes('https://') ? 'https://' : 'http://';
+    const replacedStorageUrl = storageUrl.replace(currentSchema, 'https?://');
+    return new RegExp(replacedStorageUrl + '[^,.^;]*\.[a-z0-9]*', 'ig');
 };
 
 const localUrlSchemas = ['file://', 'ms-appx://', 'ms-appdata://'];
