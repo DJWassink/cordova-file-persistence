@@ -61,7 +61,7 @@ const ResolveFilesystemUrls = (storageName, urls, statusUpdateCallback) => {
 const DownloadTask = (url, filer) => {
     return new Promise(async(resolve, reject) => {
         //if already is a local url, we don't need to download it
-        if (IsLocalUrl(url)) resolve({url: url, fileSystemUrl: url});
+        if (IsLocalUrl(url)) return resolve({url: url, fileSystemUrl: url});
 
         //else try to download it.
         try {
