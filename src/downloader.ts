@@ -1,6 +1,15 @@
-import Filer from './filer'
+import InitFiler, {Filer} from './filer'
 import Throttle from 'promise-parallel-throttle'
-import {IsLocalUrl, IsCordovaBrowserApp} from './util'
+import {IsLocalUrl, IsCordovaBrowserApp, StripUrl} from './util'
+
+export interface UrlPair {
+    url: string,
+    fileSystemUrl: string
+}
+
+declare class FileTransfer {
+    download(remoteUrl:string, localUrl:string, success:Function, failure:Function, trustAllSource:boolean, options:Object);
+}
 
 /**
  * Takes a list of urls and returns a list of key value pairs with the urls and their local copy.
@@ -9,7 +18,7 @@ import {IsLocalUrl, IsCordovaBrowserApp} from './util'
  * @param statusUpdateCallback callback with a percentage how much is done
  * @returns {Promise}
  */
-export default function (storageName, urls, statusUpdateCallback) {
+export default function (storageName:string, urls:Array<string>, statusUpdateCallback:Function):Promise<Array<UrlPair>> {
     return new Promise(async (resolve, reject) => {
         if (IsCordovaBrowserApp()) reject(new Error('Invalid environment, either a browser or not a cordova app.'));
 
@@ -30,10 +39,10 @@ export default function (storageName, urls, statusUpdateCallback) {
  * @param statusUpdateCallback
  * @returns {Promise}
  */
-const ResolveFilesystemUrls = (storageName, urls, statusUpdateCallback) => {
+const ResolveFilesystemUrls = (storageName:string, urls:Array<string>, statusUpdateCallback:Function):Promise<Array<UrlPair>> => {
     return new Promise(async(resolve, reject) => {
         try {
-            const myFiler = await Filer(storageName);
+            const myFiler = await InitFiler(storageName);
             const tasks = urls.map(url => () => DownloadTask(url, myFiler));
             const result = await Throttle.raw(tasks, 3, false, (status) => {
                 statusUpdateCallback(100 / (urls.length) * status.amountDone)
@@ -58,7 +67,7 @@ const ResolveFilesystemUrls = (storageName, urls, statusUpdateCallback) => {
  * @param filer
  * @returns {Promise}
  */
-const DownloadTask = (url, filer) => {
+const DownloadTask = (url:string, filer:Filer):Promise<UrlPair> => {
     return new Promise(async(resolve, reject) => {
         //if already is a local url, we don't need to download it
         if (IsLocalUrl(url)) return resolve({url: url, fileSystemUrl: url});
@@ -86,18 +95,8 @@ const DownloadTask = (url, filer) => {
  * @param urls
  * @param filer
  */
-const RemoveFiles = (urls, filer) => {
+const RemoveFiles = (urls:Array<string>, filer:Filer) => {
     urls.forEach(url => filer.deleteFile(StripUrl(url)));
-};
-
-/**
- * Strip a url of its path and invalid characters.
- * @param url
- * @returns string
- */
-const StripUrl = (url) => {
-    const splittedName = url.split('/');
-    return encodeURI(splittedName[splittedName.length - 1]).replace(/ /g, '_');
 };
 
 /**
@@ -106,7 +105,7 @@ const StripUrl = (url) => {
  * @param reservedLocalUrl
  * @returns {Promise}
  */
-const DownloadFile = (remoteUrl, reservedLocalUrl) => {
+const DownloadFile = (remoteUrl:string, reservedLocalUrl:string):Promise<Entry> => {
     return new Promise((resolve, reject) => {
         const myFileTransfer = new FileTransfer();
 

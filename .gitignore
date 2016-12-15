@@ -20,3 +20,4 @@ tmp
 /cordova/www/img/**/*
 /cordova/www/css/**/*
 /ops/cert/*
+build

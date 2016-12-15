@@ -2,6 +2,12 @@
   "name": "cordova-file-persistence",
   "version": "0.0.1",
   "description": "Download remote files to your local filesystem in a cordova app.",
+  "main": "build/downloader.js",
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "rm -rf ./build && tsc && npm run declarations",
+    "declarations": "tsc --declaration"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DJWassink/cordova-file-persistence.git"
@@ -13,5 +19,9 @@
   "homepage": "https://github.com/DJWassink/cordova-file-persistence#readme",
   "dependencies": {
     "promise-parallel-throttle": "^2.2.0"
+  },
+  "devDependencies": {
+    "@types/filesystem": "^0.0.28",
+    "typescript": "^2.0.7"
   }
 }

@@ -2,8 +2,9 @@
  * File helper for Cordova based applications
  * Doesn't support nested paths!
  */
+declare const LocalFileSystem: any;
 
-export default function InstantiateFileSystem(name, persistent = true, size = 0) {
+export default function InstantiateFileSystem(name:string, persistent = true, size = 0):Promise<Filer> {
     return new Promise((resolve, reject) => {
         document.addEventListener('deviceready', () => {
 
@@ -19,14 +20,16 @@ export default function InstantiateFileSystem(name, persistent = true, size = 0)
     });
 }
 
-class Filer {
-    constructor(directory) {
+export class Filer {
+    directory:DirectoryEntry;
+
+    constructor(directory:DirectoryEntry) {
         if (!directory) throw new Error('No filesystem directory instantiated');
 
         this.directory = directory;
     }
 
-    getFileUrl(path) {
+    getFileUrl(path:string):Promise<String> {
         return new Promise((resolve, reject) => {
             this.directory.getFile(path, {create: false, exclusive: true}, fileEntry => {
                 resolve(fileEntry.toURL());
@@ -34,7 +37,7 @@ class Filer {
         })
     }
 
-    readFile(path) {
+    readFile(path:string):Promise<String> {
         return new Promise((resolve, reject) => {
 
             this.directory.getFile(path, {create: false, exclusive: true}, fileEntry => {
@@ -52,7 +55,7 @@ class Filer {
         })
     }
 
-    readBinaryFile(path) {
+    readBinaryFile(path:string):Promise<ArrayBuffer> {
         return new Promise((resolve, reject) => {
             this.directory.getFile(path, {create: false, exclusive: true}, fileEntry => {
                 fileEntry.file(file => {
@@ -68,7 +71,7 @@ class Filer {
         })
     }
 
-    writeNewFile(path, blob) {
+    writeNewFile(path:string, blob:Blob):Promise<any> {
         if (blob.constructor.name != 'Blob') {
             console.warn('Given file is not of the type Blob, assuming text/plain');
             blob = new Blob([blob], {type: 'text/plain'});
@@ -87,7 +90,7 @@ class Filer {
         })
     }
 
-    reserveNewFile(path) {
+    reserveNewFile(path:string):Promise<FileEntry> {
         return new Promise((resolve, reject) => {
             this.directory.getFile(path, {create: true, exclusive: true}, fileEntry => {
                 resolve(fileEntry);
@@ -95,7 +98,7 @@ class Filer {
         })
     }
 
-    updateFile(path, blob) {
+    updateFile(path:string, blob:Blob):Promise<any> {
         if (blob.constructor.name != 'Blob') {
             console.warn('Given file is not of the type Blob, assuming text/plain');
             blob = new Blob([blob], {type: 'text/plain'});
@@ -113,12 +116,12 @@ class Filer {
         })
     }
 
-    fileExists(path) {
+    fileExists(path:string):Promise<Boolean> {
         return new Promise((resolve, reject) => {
             this.directory.getFile(path, {create: false, exclusive: true}, fileEntry => {
                 resolve(fileEntry.isFile);
             }, (err) => {
-                if (err.name == "NotFoundError" || err.name == "NOT_FOUND_ERR" || err.code === 1) {
+                if (err.name == "NotFoundError" || err.name == "NOT_FOUND_ERR" || (err as any).code === 1) {
                     resolve(false);
                 } else {
                     reject(err);
@@ -127,7 +130,7 @@ class Filer {
         })
     }
 
-    deleteFile(path) {
+    deleteFile(path:string):Promise<any> {
         return new Promise((resolve, reject) => {
             this.directory.getFile(path, {create: false, exclusive: true}, fileEntry => {
                 fileEntry.remove(resolve, reject)
