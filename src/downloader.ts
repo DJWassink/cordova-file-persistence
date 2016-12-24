@@ -2,13 +2,18 @@ import InitFiler, {Filer} from './filer'
 import Throttle from 'promise-parallel-throttle'
 import {IsLocalUrl, IsCordovaBrowserApp, StripUrl} from './util'
 
+export interface DownloadReport {
+    failedUrls: Array<string>,
+    downloadedUrls: Array<UrlPair>
+}
+
 export interface UrlPair {
     url: string,
     fileSystemUrl: string
 }
 
 declare class FileTransfer {
-    download(remoteUrl:string, localUrl:string, success:Function, failure:Function, trustAllSource:boolean, options:Object);
+    public download(remoteUrl: string, localUrl: string, success: Function, failure: Function, trustAllSource: boolean, options: Object);
 }
 
 /**
@@ -18,8 +23,8 @@ declare class FileTransfer {
  * @param statusUpdateCallback callback with a percentage how much is done
  * @returns {Promise}
  */
-export default function (storageName:string, urls:Array<string>, statusUpdateCallback:Function):Promise<Array<UrlPair>> {
-    return new Promise(async (resolve, reject) => {
+export default function (storageName: string, urls: Array<string>, statusUpdateCallback: Function): Promise<Array<UrlPair>> {
+    return new Promise(async(resolve, reject) => {
         if (IsCordovaBrowserApp()) reject(new Error('Invalid environment, either a browser or not a cordova app.'));
 
         try {
@@ -32,6 +37,17 @@ export default function (storageName:string, urls:Array<string>, statusUpdateCal
 }
 
 /**
+ * Removes a list of URLs from the local filesystem.
+ * @param storageName
+ * @param urls
+ * @returns {Promise<void>}
+ */
+export const DeleteFiles = async(storageName: string, urls: Array<string>): Promise<void> => {
+    const myFiler = await InitFiler(storageName);
+    RemoveFiles(urls, myFiler);
+};
+
+/**
  * Resolves a list of urls with a local counterpart, either download the files if they are not preset on the
  * local filesystem or return the already existing copy.
  * @param storageName
@@ -39,7 +55,7 @@ export default function (storageName:string, urls:Array<string>, statusUpdateCal
  * @param statusUpdateCallback
  * @returns {Promise}
  */
-const ResolveFilesystemUrls = (storageName:string, urls:Array<string>, statusUpdateCallback:Function):Promise<Array<UrlPair>> => {
+const ResolveFilesystemUrls = (storageName: string, urls: Array<string>, statusUpdateCallback: Function): Promise<Array<DownloadReport>> => {
     return new Promise(async(resolve, reject) => {
         try {
             const myFiler = await InitFiler(storageName);
@@ -49,12 +65,15 @@ const ResolveFilesystemUrls = (storageName:string, urls:Array<string>, statusUpd
             });
 
             //remove failed files, if any
-            if (result.rejectedIndexes.length) {
-                RemoveFiles(result.rejectedIndexes.map(i => urls[i]), myFiler);
-                reject(new Error('Some files failed'));
-            } else {
-                resolve(result.taskResults);
+            const failedUrls = result.rejectedIndexes.map(i => urls[i]);
+            if (failedUrls.length) {
+                RemoveFiles(failedUrls, myFiler);
             }
+
+            resolve({
+                failedUrls,
+                downloadedUrls: result.taskResults
+            });
         } catch (error) {
             reject(error);
         }
@@ -67,10 +86,10 @@ const ResolveFilesystemUrls = (storageName:string, urls:Array<string>, statusUpd
  * @param filer
  * @returns {Promise}
  */
-const DownloadTask = (url:string, filer:Filer):Promise<UrlPair> => {
+const DownloadTask = (url: string, filer: Filer): Promise<UrlPair> => {
     return new Promise(async(resolve, reject) => {
         //if already is a local url, we don't need to download it
-        if (IsLocalUrl(url)) return resolve({url: url, fileSystemUrl: url});
+        if (IsLocalUrl(url)) return resolve({url, fileSystemUrl: url});
 
         //else try to download it.
         try {
@@ -81,9 +100,9 @@ const DownloadTask = (url:string, filer:Filer):Promise<UrlPair> => {
                 const entry = await filer.reserveNewFile(fileName);
                 await DownloadFile(url, entry.toURL());
             }
-            const filesystemUrl = await filer.getFileUrl(fileName);
+            const fileSystemUrl = await filer.getFileUrl(fileName);
 
-            resolve({url: url, fileSystemUrl: filesystemUrl});
+            resolve({url, fileSystemUrl});
         } catch (error) {
             reject(error);
         }
@@ -95,8 +114,8 @@ const DownloadTask = (url:string, filer:Filer):Promise<UrlPair> => {
  * @param urls
  * @param filer
  */
-const RemoveFiles = (urls:Array<string>, filer:Filer) => {
-    urls.forEach(url => filer.deleteFile(StripUrl(url)));
+const RemoveFiles = (urls: Array<string>, filer: Filer) => {
+    urls.forEach(async url => await filer.deleteFile(StripUrl(url)));
 };
 
 /**
@@ -105,10 +124,9 @@ const RemoveFiles = (urls:Array<string>, filer:Filer) => {
  * @param reservedLocalUrl
  * @returns {Promise}
  */
-const DownloadFile = (remoteUrl:string, reservedLocalUrl:string):Promise<Entry> => {
+const DownloadFile = (remoteUrl: string, reservedLocalUrl: string): Promise<Entry> => {
     return new Promise((resolve, reject) => {
         const myFileTransfer = new FileTransfer();
-
         myFileTransfer.download(
             encodeURI(remoteUrl),
             reservedLocalUrl,
@@ -124,5 +142,3 @@ const DownloadFile = (remoteUrl:string, reservedLocalUrl:string):Promise<Entry> 
         );
     })
 };
-
-

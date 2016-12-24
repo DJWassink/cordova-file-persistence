@@ -1,0 +1,18 @@
+{
+  "extends": "tslint:latest",
+  "rules": {
+    "comment-format": false,
+    "curly": false,
+    "eofline": false,
+    "semicolon": false,
+    "max-line-length": 180,
+    "quotemark": [true, "single", "jsx-double"],
+    "array-type": [true, "generic"],
+    "arrow-parens": false,
+    "interface-name": false,
+    "ordered-imports": false,
+    "object-literal-sort-keys": false,
+    "trailing-comma": false,
+    "only-arrow-functions": false
+  }
+}
