@@ -23,13 +23,13 @@ declare class FileTransfer {
  * @param statusUpdateCallback callback with a percentage how much is done
  * @returns {Promise}
  */
-export default function (storageName: string, urls: Array<string>, statusUpdateCallback: Function): Promise<Array<UrlPair>> {
+export default function (storageName: string, urls: Array<string>, statusUpdateCallback: Function): Promise<DownloadReport> {
     return new Promise(async(resolve, reject) => {
         if (IsCordovaBrowserApp()) reject(new Error('Invalid environment, either a browser or not a cordova app.'));
 
         try {
-            const filesystemUrls = await ResolveFilesystemUrls(storageName, urls, statusUpdateCallback);
-            resolve(filesystemUrls);
+            const downloadReport = await ResolveFilesystemUrls(storageName, urls, statusUpdateCallback);
+            resolve(downloadReport);
         } catch (error) {
             reject(error);
         }
@@ -55,7 +55,7 @@ export const DeleteFiles = async(storageName: string, urls: Array<string>): Prom
  * @param statusUpdateCallback
  * @returns {Promise}
  */
-const ResolveFilesystemUrls = (storageName: string, urls: Array<string>, statusUpdateCallback: Function): Promise<Array<DownloadReport>> => {
+const ResolveFilesystemUrls = (storageName: string, urls: Array<string>, statusUpdateCallback: Function): Promise<DownloadReport> => {
     return new Promise(async(resolve, reject) => {
         try {
             const myFiler = await InitFiler(storageName);
